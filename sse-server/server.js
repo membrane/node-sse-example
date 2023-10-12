@@ -1,62 +1,31 @@
-const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const express = require('express');
 
 const app = express();
-
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
-
-app.get('/status', (request, response) => response.json({clients: clients.length}));
-
+const clients = [];
+const intervallInMS = 3000;
 const PORT = 3001;
 
-let clients = [];
-let facts = [];
-
-app.listen(PORT, () => {
-    console.log(`Facts Events service listening at http://localhost:${PORT}`)
-})
-
-function eventsHandler(request, response, next) {
-    const headers = {
-        'Content-Type': 'text/event-stream',
-        'Connection': 'keep-alive',
-        'Cache-Control': 'no-cache'
-    };
-    response.writeHead(200, headers);
-
-    const data = `data: ${JSON.stringify(facts)}\n\n`;
-
-    response.write(data);
-
+const createTemperatureEvent = () => `data: ${(createTemperatureString())}\n\n`;
+const createTemperatureString = () => JSON.stringify(`{"temperature": "${getRandomNumber(58, -88)}"}`);
+const eventsHandler = (request, response) => {
     const clientId = Date.now();
+    const headers = {'Content-Type': 'text/event-stream'};
 
-    const newClient = {
-        id: clientId,
-        response
-    };
+    clients.push({id: clientId, response});
 
-    clients.push(newClient);
+    request.on('close', () => clients.splice(clients.map(it => it.id).indexOf(clientId), 1));
 
-    request.on('close', () => {
-        console.log(`${clientId} Connection closed`);
-        clients = clients.filter(client => client.id !== clientId);
-    });
-}
+    response.writeHead(200, headers);
+};
+const getRandomNumber = (max, min) => Number(Math.random() * (max - min) + min).toFixed(1);
+const sendEventsToAll = (newEvent) => clients.forEach(client => client.response.write(newEvent));
 
-app.get('/events', eventsHandler);
+app.use(cors())
+    .use(bodyParser.json())
+    .use(bodyParser.urlencoded({extended: false}))
+    .get('/events', eventsHandler)
+    .listen(PORT, () => console.log(`Temperature Events service listening at http://localhost:${PORT}`));
 
-function sendEventsToAll(newFact) {
-    clients.forEach(client => client.response.write(`data: ${JSON.stringify(newFact)}\n\n`))
-}
-
-async function addFact(request, response, next) {
-    const newFact = request.body;
-    facts.push(newFact);
-    response.json(newFact);
-    return sendEventsToAll(newFact);
-}
-
-app.post('/fact', addFact);
+setInterval(() => sendEventsToAll(createTemperatureEvent()), intervallInMS);
