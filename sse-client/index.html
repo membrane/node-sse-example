@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>SSE Client</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<div>
+    Temperature: <span id="temperature"></span>
+</div>
+<br/>
+<div>
+    Events:
+    <br/>
+    <ul id="events"></ul>
+</div>
+</body>
+<script>
+    const addEvent = event => {
+        logTemperature(event["temperature"]);
+        displayTemperature(event["temperature"]);
+    };
+    const displayTemperature = temperature => (document.getElementById("temperature").textContent = temperature);
+    const logTemperature = temperature => {
+        const node = document.createElement("li");
+        const textNode = document.createTextNode(`${new Date().toLocaleTimeString()} Temperature: ${temperature}`);
+
+        node.appendChild(textNode);
+        document.getElementById("events").prepend(node);
+    };
+
+    new EventSource('http://localhost:8001/events').onmessage = (event) => addEvent(JSON.parse(JSON.parse(event.data)));
+</script>
+</html>
