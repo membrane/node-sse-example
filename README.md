@@ -49,26 +49,8 @@ node server.js
 
 ```bash
 cd sse-client
-npm install
-npm start
 ```
 
-The browser client to receive the stream data will be at http://localhost:8002/.  
+And open the `index.html` in your browser.
+
 You can watch the calls at http://localhost:9001/admin/calls/.
-
-# cURL
-
-## Push data
-
-```bash
-curl -X POST \
- -H "Content-Type: application/json" \
- -d '{"info": "In den folgenden Kategorien findet ihr Online Artikel, Videos und Tutorials.", "source": "https://www.predic8.de/public/"}'\
- -s http://localhost:8001/fact
-```
-
-## Listen (Not part of the Demo)
-
-```bash
-curl -H Accept:text/event-stream http://localhost:8001/events
-```
